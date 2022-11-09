@@ -113,7 +113,7 @@ class BookController extends Controller
                 $book->bookDownload()->delete();
                 $book->delete();
                 DB::commit();
-                return $this->getResponse201('book', 'deleted', $book);
+                return $this->getResponseDelete200('book');
             } else {
                 return $this->getResponse404();
             }
