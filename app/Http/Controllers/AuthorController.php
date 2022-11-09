@@ -33,23 +33,29 @@ class AuthorController extends Controller
 
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
             $author = new Author();
             $author->name = $request->name;
             $author->first_surname = $request->first_surname;
-            $author->second_surname = $request->second_surname;
+            if ($request->second_surname) $author->second_surname = $request->second_surname;
             $author->save();
-            foreach ($request->books as $book) {
-                $book->books()->attach($book);
+            if ($request->books) {
+                foreach ($request->books as $book) {
+                    $book->books()->attach($book);
+                }
             }
+            DB::commit();
             return $this->getResponse201('author', 'created', $author);    
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }
 
     public function update(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
             if (Author::where('id', $id)->exists()) {
                 $author = Author::with('books')
@@ -66,17 +72,20 @@ class AuthorController extends Controller
                     )
                 );
                 $author->refresh();
+                DB::commit();
                 return $this->getResponse201('author', 'updated', $author);
             } else {
                 return $this->getResponse404();
             }
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }
 
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
             if (Author::where('id', $id)->exists()) {
                 $author = Author::with('books')
@@ -84,11 +93,13 @@ class AuthorController extends Controller
                     ->first();
                 $author->books()->detach();
                 $author->delete();
+                DB::commit();
                 return $this->getResponse201('author', 'deleted', $author);
             } else {
                 return $this->getResponse404();
             }
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }

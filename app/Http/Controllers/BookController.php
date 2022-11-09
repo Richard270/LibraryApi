@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Book;
 
 class BookController extends Controller
@@ -33,6 +34,7 @@ class BookController extends Controller
 
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
             $isbn = preg_replace('/\s+/', '', $request->isbn); //Remove blank spaces from ISBN
             $existIsbn = Book::where("isbn", $isbn)->exists(); //Check if a registered book exists (duplicate ISBN)
@@ -41,7 +43,8 @@ class BookController extends Controller
                 $book->isbn = $isbn;
                 $book->title = $request->title;
                 $book->description = $request->description;
-                $book->published_date = date('y-m-d h:i:s'); //Temporarily assign the current date
+                if ($request->published_date) $book->published_date = $request->published_date;
+                else $book->published_date = date('y-m-d h:i:s'); //Temporarily assign the current date
                 $book->category_id = $request->category["id"];
                 $book->editorial_id = $request->editorial["id"];
                 $book->save();
@@ -49,17 +52,20 @@ class BookController extends Controller
                     $book->authors()->attach($item);
                 }
                 $book->bookDownload()->create([]);
+                DB::commit();
                 return $this->getResponse201('book', 'created', $book);
             } else {
                 return $this->getResponse500(['The isbn field must be unique']);
             }
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }
 
     public function update(Request $request, $id)
     {
+        DB::beginTransaction();
         try {
             if (Book::where('id', $id)->exists()) {
                 $book = Book::with('authors', 'category', 'editorial', 'bookDownload')
@@ -84,17 +90,20 @@ class BookController extends Controller
                     )
                 );
                 $book->refresh();
+                DB::commit();
                 return $this->getResponse201('book', 'updated', $book);
             } else {
                 return $this->getResponse404();
             }
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }
 
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
             if (Book::where('id', $id)->exists()) {
                 $book = Book::with('authors', 'category', 'editorial', 'bookDownload')
@@ -103,11 +112,13 @@ class BookController extends Controller
                 $book->authors()->detach();
                 $book->bookDownload()->delete();
                 $book->delete();
+                DB::commit();
                 return $this->getResponse201('book', 'deleted', $book);
             } else {
                 return $this->getResponse404();
             }
         } catch (Exception $e) {
+            DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
     }
