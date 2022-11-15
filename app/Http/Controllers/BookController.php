@@ -10,7 +10,7 @@ class BookController extends Controller
 {
     public function index()
     {
-        $books = Book::with('authors', 'category', 'editorial', 'bookDownload')
+        $books = Book::with('authors', 'category', 'editorial', 'bookDownload', 'bookReviews')
             ->orderBy('title', 'asc')
             ->get();
         return $this->getResponse200($books);
@@ -20,7 +20,7 @@ class BookController extends Controller
     {
         try {
             if (Book::where('id', $id)->exists()) {
-                $book = Book::with('authors', 'category', 'editorial', 'bookDownload')
+                $book = Book::with('authors', 'category', 'editorial', 'bookDownload', 'bookReviews')
                     ->where('id', $id)
                     ->first();
                 return $this->getResponse200($book);
@@ -68,7 +68,7 @@ class BookController extends Controller
         DB::beginTransaction();
         try {
             if (Book::where('id', $id)->exists()) {
-                $book = Book::with('authors', 'category', 'editorial', 'bookDownload')
+                $book = Book::with('authors', 'category', 'editorial', 'bookDownload', 'bookReviews')
                     ->where('id', $id)
                     ->first();
                 if ($request->isbn) {
@@ -106,11 +106,12 @@ class BookController extends Controller
         DB::beginTransaction();
         try {
             if (Book::where('id', $id)->exists()) {
-                $book = Book::with('authors', 'category', 'editorial', 'bookDownload')
+                $book = Book::with('authors', 'category', 'editorial', 'bookDownload', 'bookReviews')
                     ->where('id', $id)
                     ->first();
                 $book->authors()->detach();
                 $book->bookDownload()->delete();
+                $book->bookReviews()->delete();
                 $book->delete();
                 DB::commit();
                 return $this->getResponseDelete200('book');

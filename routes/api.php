@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BookReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,4 +36,15 @@ Route::prefix('author')->group(function(){
     Route::post('store', [AuthorController::class, 'store']);
     Route::put('update/{id}', [AuthorController::class, 'update']);
     Route::delete('destroy/{id}', [AuthorController::class, 'destroy']);
+});
+
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+
+Route::group(['middleware' => ["auth:sanctum"]], function () {
+    Route::get('userProfile', [AuthController::class, 'userProfile']);
+    Route::get('logout', [AuthController::class, 'logout']);
+    Route::put('changePassword', [AuthController::class, 'changePassword']);
+    Route::post('addBookReview', [BookReviewController::class, 'addBookReview']);
+    Route::put('updateBookReview/{id}', [BookReviewController::class, 'updateBookReview']);
 });

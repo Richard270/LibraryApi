@@ -8,6 +8,7 @@ use App\Models\category;
 use App\Models\Editorial;
 use App\Models\Author;
 use App\Models\bookDownload;
+use App\Models\bookReview;
 
 class Book extends Model
 {
@@ -31,6 +32,15 @@ class Book extends Model
         return $this->hasOne(
             bookDownload::class
         );
+    }
+
+    public function bookReviews() 
+    {
+        return $this->hasMany(
+            bookReview::class,
+            'id'
+        );
+
     }
 
     public function category()

@@ -5,17 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Book;
+use App\Models\User;
 
-class BookDownload extends Model
+class BookReview extends Model
 {
     use HasFactory;
 
-    protected $table = 'books_downloads';
+    protected $table = 'book_reviews';
 
     protected $fillable = [
         'id',
-        'total_downloads',
-        'book_id'
+        'comment',
+        'edited',
+        'book_id',
+        'user_id'
     ];
 
     public $timestamps = false;
@@ -24,7 +27,17 @@ class BookDownload extends Model
     {
         return $this->belongsTo(
             Book::class,
-            'book_id'
+            'book_id',
+            'id'
+        );
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(
+            User::class,
+            'user_id',
+            'id'
         );
     }
 }
