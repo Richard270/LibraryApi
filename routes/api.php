@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BookReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +44,6 @@ Route::group(['middleware' => ["auth:sanctum"]], function () {
     Route::get('userProfile', [AuthController::class, 'userProfile']);
     Route::get('logout', [AuthController::class, 'logout']);
     Route::put('changePassword', [AuthController::class, 'changePassword']);
-    Route::post('addBookReview', [BookReviewController::class, 'addBookReview']);
-    Route::put('updateBookReview/{id}', [BookReviewController::class, 'updateBookReview']);
+    Route::post('addBookReview', [BookController::class, 'addBookReview']);
+    Route::put('updateBookReview/{id}', [BookController::class, 'updateBookReview']);
 });

@@ -39,25 +39,15 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required'
         ]);
-        if (!$validator->fails()) {
-            $user = User::where('email', '=', $request->email)->first();
-            if (isset($user->id)) {
-                if (Hash::check($request->password, $user->password)) {
-                    //Create token
-                    $token = $user->createToken('auth_token')->plainTextToken;
-                    return response()->json([
-                        'message' => "Successful authentication",
-                        'access_token' => $token,
-                    ], 200);
-                } else { //Invalid credentials
-                    return $this->getResponse401();
-                }
-            } else { //User not found
-                return $this->getResponse401();
-            }
-        } else {
-            return $this->getResponse500([$validator->errors()]);
-        }
+        if ($validator->fails()) return $this->getResponse500([$validator->errors()]);
+        $user = User::where('email', '=', $request->email)->first();
+        if (!isset($user->id)) return $this->getResponse401();
+        if (!Hash::check($request->password, $user->password)) return $this->getResponse401();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'message' => "Successful authentication",
+            'access_token' => $token,
+        ], 200);
     }
 
     public function userProfile()
@@ -78,14 +68,11 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'password' => 'required|confirmed'
         ]);
+        if ($validator->fails()) return $this->getResponse500([$validator->errors()]);
+        DB::beginTransaction();
         try {
-            if ($validator->fails()) return $this->getResponse500([$validator->errors()]);
             $user = $request->user();
-            DB::beginTransaction();
-            // $user->tokens()->where('id','!=', $user->currentAccessToken()->id)->delete();
-            foreach($user->tokens()->get() as $token) {
-                if ($token->id != $user->currentAccessToken()->id) $token->delete();
-            }
+            $user->tokens()->delete();
             $user->password = Hash::make($request->password);
             $user->save();
             DB::commit();

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Book;
+use App\Models\BookReview;
 
 class BookController extends Controller
 {
@@ -122,5 +124,60 @@ class BookController extends Controller
             DB::rollbackTransaction();
             return $this->getResponse500([]);
         }
+    }
+
+    public function addBookReview(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'comment' => 'required',
+            'book' => 'required'
+        ]);
+        if ($validator->fails()) return $this->getResponse500([$validator->errors()]);
+        DB::beginTransaction();
+        try {
+            if (
+                BookReview::where('book_id', $request->book['id'])
+                    ->where('user_id', $request->user()->id)
+                    ->exists()
+            )
+                return $this->getResponse500(['You have already written a review for this book']);
+            if (!Book::where('id', $request->book['id'])->exists())
+                return $this->getResponse500(['The entered book does not exists']);
+                // return $this->getResponse404();
+            $bookReview = new BookReview();
+            $bookReview->comment = $request->comment;
+            $bookReview->book_id = $request->book['id'];
+            $bookReview->user_id = $request->user()->id;
+            $bookReview->save();
+            DB::commit();
+            return $this->getResponse201('book review', 'created', $bookReview);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->getResponse500([$e->getMessage()]);
+        }  
+    }
+    
+    public function updateBookReview(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'comment' => 'required',
+        ]);
+        if ($validator->fails()) return $this->getResponse500([$validator->errors()]);
+        if (!BookReview::where('id', $id)->exists()) return $this->getResponse404();
+        $bookReview = BookReview::with('user', 'book')
+            ->where('id', $id)
+            ->first();
+        if ($bookReview->user->id != $request->user()->id ) return $this->getResponse403();
+        DB::beginTransaction();
+        try {
+            $bookReview->comment = $request->comment;
+            $bookReview->edited = true;
+            $bookReview->save();
+            DB::commit();
+            return $this->getResponse201('book review', 'updated', $bookReview);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->getResponse500([$e->getMessage()]);
+        }  
     }
 }
